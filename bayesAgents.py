@@ -258,7 +258,15 @@ def getMostLikelyFoodHousePosition(evidence, bayesNet, eliminationOrder):
     """
     "*** YOUR CODE HERE ***"
     # util.raiseNotDefined()
-
+    prob = float('-inf')
+    bestMove = None
+    factor = inference.inferenceByVariableElimination(bayesNet, FOOD_HOUSE_VAR, evidence, eliminationOrder)
+    for assignment in factor.getAllPossibleAssignmentDicts():
+        val = factor.getProbability(assignment)
+        if val > prob:
+            prob = val
+            bestMove = assignment
+    return bestMove
 
 class BayesAgent(game.Agent):
 
@@ -355,11 +363,29 @@ class VPIAgent(BayesAgent):
         of the houses---this is calculated elsewhere in the code.
         """
 
-        leftExpectedValue = 0
-        rightExpectedValue = 0
+        leftExpectedValue = 0   # Rushing left
+        rightExpectedValue = 0  # Rushing right
+
+        #GHOST_COLLISION_REWARD, WON_GAME_REWARD
 
         "*** YOUR CODE HERE ***"
         # util.raiseNotDefined()
+        # HOUSE_VALS = [TOP_LEFT_VAL, TOP_RIGHT_VAL, BOTTOM_LEFT_VAL, BOTTOM_RIGHT_VAL]
+
+        leftProbability = 0
+        rightProbability = 0
+        # total = 0
+
+        factors = inference.inferenceByVariableElimination(self.bayesNet, HOUSE_VARS, evidence, eliminationOrder)
+        for assignment in factors.getAllPossibleAssignmentDicts():
+            probability = factors.getProbability(assignment)
+            if assignment[FOOD_HOUSE_VAR] == TOP_LEFT_VAL and assignment[GHOST_HOUSE_VAR] == TOP_RIGHT_VAL:
+                leftProbability += probability
+            if assignment[GHOST_HOUSE_VAR] == TOP_LEFT_VAL and assignment[FOOD_HOUSE_VAR] == TOP_RIGHT_VAL:
+                rightProbability += probability
+        
+        leftExpectedValue = (leftProbability * WON_GAME_REWARD) + (rightProbability * GHOST_COLLISION_REWARD)
+        rightExpectedValue = (rightProbability * WON_GAME_REWARD) + (leftProbability * GHOST_COLLISION_REWARD)
 
         return leftExpectedValue, rightExpectedValue
 
@@ -426,6 +452,13 @@ class VPIAgent(BayesAgent):
 
         "*** YOUR CODE HERE ***"
         # util.raiseNotDefined()
+        # getExplorationProbsAndOutcomes(self, evidence)
+        # computeEnterValues(self, evidence, eliminationOrder)
+
+        for prob, expEvi in self.getExplorationProbsAndOutcomes(evidence):
+            values = self.computeEnterValues(expEvi, enterEliminationOrder)
+
+            expectedValue += prob * max(values[0], values[1])
 
         return expectedValue
 
