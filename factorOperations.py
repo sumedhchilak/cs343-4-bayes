@@ -15,6 +15,7 @@
 from bayesNet import Factor
 import operator as op
 import util
+import copy
 
 def joinFactorsByVariableWithCallTracking(callTrackingList=None):
 
@@ -101,6 +102,24 @@ def joinFactors(factors):
 
 
     "*** YOUR CODE HERE ***"
+    unconditionedSet = set()
+    conditionedSet = set()
+    for f in factors:
+        for var in f.unconditionedVariables():
+            unconditionedSet.add(var)
+        for var in f.conditionedVariables():
+            conditionedSet.add(var)
+    new_Conditioned_Set = set()
+    for var in conditionedSet:
+        if var not in unconditionedSet:
+            new_Conditioned_Set.add(var)
+    new_factor = Factor(unconditionedSet, new_Conditioned_Set, f.variableDomainsDict())
+    for assignment in new_factor.getAllPossibleAssignmentDicts():
+        probability = 1
+        for f in factors:
+            probability *= f.getProbability(assignment)
+        new_factor.setProbability(assignment, probability)
+    return new_factor
     # util.raiseNotDefined()
 
 
@@ -150,8 +169,19 @@ def eliminateWithCallTracking(callTrackingList=None):
                     "unconditionedVariables: " + str(factor.unconditionedVariables()))
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
-
+        # util.raiseNotDefined()
+        unconditionedVars = factor.unconditionedVariables()
+        unconditionedVars.remove(eliminationVariable)
+        conditionedVars = factor.conditionedVariables()
+        new_factor = Factor(unconditionedVars, conditionedVars, factor.variableDomainsDict())
+        for assignment in new_factor.getAllPossibleAssignmentDicts():
+            probability = 0
+            for eliminated_Val in factor.variableDomainsDict()[eliminationVariable]:
+                original_assignment = copy.deepcopy(assignment)
+                original_assignment[eliminationVariable] = eliminated_Val
+                probability += factor.getProbability(original_assignment)
+            new_factor.setProbability(assignment, probability)
+        return new_factor
     return eliminate
 
 eliminate = eliminateWithCallTracking()
@@ -205,5 +235,25 @@ def normalize(factor):
                             str(factor))
 
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
-
+    # util.raiseNotDefined()
+    unconditionedVar = factor.unconditionedVariables()
+    unconditionedVarTemp = copy.deepcopy(unconditionedVar)
+    conditionedVar = factor.conditionedVariables()
+    probability = 0
+    sum = 0
+    for assignment in factor.getAllPossibleAssignmentDicts():
+        prob = factor.getProbability(assignment)
+        sum += prob
+    if sum == 0:
+        return None
+    for f in unconditionedVar:
+        var = variableDomainsDict[f]
+        if len(var) == 1:
+            unconditionedVarTemp.remove(f)
+            conditionedVar.add(f)
+    new_factor = Factor(unconditionedVarTemp, conditionedVar, variableDomainsDict)
+    for assignment in new_factor.getAllPossibleAssignmentDicts():
+        probability = (factor.getProbability(assignment)) / (sum)
+        new_factor.setProbability(assignment, probability)
+    return new_factor
+    
