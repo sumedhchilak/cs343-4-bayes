@@ -96,7 +96,25 @@ def constructBayesNet(gameState):
     variableDomainsDict = {}
 
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # util.raiseNotDefined()
+    for housePos in gameState.getPossibleHouses():
+        for obsPos in gameState.getHouseWalls(housePos):
+            obsVar = OBS_VAR_TEMPLATE % obsPos
+            obsVars.append(obsVar)
+            variableDomainsDict[obsVar] = OBS_VALS
+    
+    for house in HOUSE_VARS:
+        edges.append((X_POS_VAR, house))
+        edges.append((Y_POS_VAR, house))
+
+    for obsVar in obsVars:
+        edges.append((GHOST_HOUSE_VAR, obsVar))
+        edges.append((FOOD_HOUSE_VAR, obsVar))
+
+    variableDomainsDict[X_POS_VAR] = X_POS_VALS
+    variableDomainsDict[Y_POS_VAR] = Y_POS_VALS
+    variableDomainsDict[FOOD_HOUSE_VAR] = HOUSE_VALS
+    variableDomainsDict[GHOST_HOUSE_VAR] = HOUSE_VALS
 
     variables = [X_POS_VAR, Y_POS_VAR] + HOUSE_VARS + obsVars
     net = bn.constructEmptyBayesNet(variables, edges, variableDomainsDict)
@@ -127,7 +145,11 @@ def fillYCPT(bayesNet, gameState):
 
     yFactor = bn.Factor([Y_POS_VAR], [], bayesNet.variableDomainsDict())
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # util.raiseNotDefined()
+    yFactor.setProbability({Y_POS_VAR: BOTH_TOP_VAL}, PROB_BOTH_TOP)
+    yFactor.setProbability({Y_POS_VAR: BOTH_BOTTOM_VAL}, PROB_BOTH_BOTTOM)
+    yFactor.setProbability({Y_POS_VAR: LEFT_TOP_VAL}, PROB_ONLY_LEFT_TOP)
+    yFactor.setProbability({Y_POS_VAR: LEFT_BOTTOM_VAL}, PROB_ONLY_LEFT_BOTTOM)
     bayesNet.setCPT(Y_POS_VAR, yFactor)
 
 def fillHouseCPT(bayesNet, gameState):
@@ -192,7 +214,35 @@ def fillObsCPT(bayesNet, gameState):
     bottomLeftPos, topLeftPos, bottomRightPos, topRightPos = gameState.getPossibleHouses()
 
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    for house in gameState.getPossibleHouses():
+        for wall in gameState.getHouseWalls(house):
+            if house == bottomLeftPos:
+                house = BOTTOM_LEFT_VAL
+            if house == topLeftPos:
+                house = TOP_LEFT_VAL
+            if house == bottomRightPos:
+                house = BOTTOM_RIGHT_VAL
+            if house == topRightPos:
+                house = TOP_RIGHT_VAL
+            obsVar = OBS_VAR_TEMPLATE % wall
+            obsFactor = bn.Factor([obsVar], HOUSE_VARS, bayesNet.variableDomainsDict())
+            for assignment in obsFactor.getAllPossibleAssignmentDicts():
+                probability = {}
+                if assignment[FOOD_HOUSE_VAR] == house:
+                    probability[RED_OBS_VAL] = PROB_FOOD_RED
+                    probability[BLUE_OBS_VAL] = 1 - PROB_FOOD_RED
+                    probability[NO_OBS_VAL] = 0
+                elif assignment[GHOST_HOUSE_VAR] == house:
+                    probability[RED_OBS_VAL] = PROB_GHOST_RED
+                    probability[BLUE_OBS_VAL] = 1 - PROB_GHOST_RED
+                    probability[NO_OBS_VAL] = 0
+                elif assignment[FOOD_HOUSE_VAR] != house and assignment[GHOST_HOUSE_VAR] != house:
+                    probability[RED_OBS_VAL] = 0
+                    probability[BLUE_OBS_VAL] = 0
+                    probability[NO_OBS_VAL] = 1
+                obsFactor.setProbability(assignment, probability[assignment[obsVar]])
+            bayesNet.setCPT(obsVar, obsFactor)
+    # util.raiseNotDefined()
 
 def getMostLikelyFoodHousePosition(evidence, bayesNet, eliminationOrder):
     """
@@ -207,7 +257,7 @@ def getMostLikelyFoodHousePosition(evidence, bayesNet, eliminationOrder):
     (This should be a very short method.)
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # util.raiseNotDefined()
 
 
 class BayesAgent(game.Agent):
@@ -309,7 +359,7 @@ class VPIAgent(BayesAgent):
         rightExpectedValue = 0
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # util.raiseNotDefined()
 
         return leftExpectedValue, rightExpectedValue
 
@@ -375,7 +425,7 @@ class VPIAgent(BayesAgent):
         expectedValue = 0
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # util.raiseNotDefined()
 
         return expectedValue
 
